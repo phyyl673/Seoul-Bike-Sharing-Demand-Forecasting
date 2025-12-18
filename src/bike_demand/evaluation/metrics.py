@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import (
+    make_scorer,
     mean_absolute_error,
     mean_squared_error,
     mean_tweedie_deviance,
     r2_score,
-    make_scorer,
 )
-from sklearn.inspection import permutation_importance
+
 
 # Performance metrics
 def regression_metrics(
@@ -36,13 +37,12 @@ def regression_metrics(
         Dictionary containing regression performance metrics.
     """
     return {
-        "tweedie_deviance": float(
-            mean_tweedie_deviance(y_true, y_pred, power=tweedie_power)
-        ),
+        "tweedie_deviance": float(mean_tweedie_deviance(y_true, y_pred, power=tweedie_power)),
         "rmse": float(np.sqrt(mean_squared_error(y_true, y_pred))),
         "mae": float(mean_absolute_error(y_true, y_pred)),
         "r2": float(r2_score(y_true, y_pred)),
     }
+
 
 # Feature relevance (Permutation Importance)
 def permutation_importance_table(

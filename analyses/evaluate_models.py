@@ -3,28 +3,29 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+import pandas as pd
 
-from bike_demand.data.load_data import load_cleaned_data
+from bike_demand.evaluation.metrics import (
+    permutation_importance_table,
+    regression_metrics,
+)
 from bike_demand.modelling.glm_pipeline import (
     build_glm_pipeline,
+)
+from bike_demand.modelling.glm_pipeline import (
     split_xy as split_xy_glm,
 )
 from bike_demand.modelling.lgbm_pipeline import (
     build_lgbm_pipeline,
+)
+from bike_demand.modelling.lgbm_pipeline import (
     split_xy as split_xy_lgbm,
 )
-
-from bike_demand.evaluation.metrics import (
-    regression_metrics,
-    permutation_importance_table,
-)
 from bike_demand.plotting import (
-    plot_predicted_vs_actual,
     plot_partial_dependence,
-    plot_permutation_importance
+    plot_permutation_importance,
+    plot_predicted_vs_actual,
 )
 
 
@@ -60,7 +61,7 @@ def run_evaluation(
     print(sorted(df.columns.tolist()))
 
     train_df = df[df["sample"] == "train"]
-    val_df   = df[df["sample"] == "validation"]
+    val_df = df[df["sample"] == "validation"]
 
     # Prepare features and target
     X_train_glm, y_train = split_xy_glm(train_df, spec=None)
@@ -99,9 +100,7 @@ def run_evaluation(
         ),
     }
 
-    (results_dir / "evaluation_metrics.json").write_text(
-        json.dumps(metrics, indent=2)
-    )
+    (results_dir / "evaluation_metrics.json").write_text(json.dumps(metrics, indent=2))
 
     # Predicted vs Actual plots
     plot_predicted_vs_actual(
@@ -144,21 +143,19 @@ def run_evaluation(
     )
 
     plot_permutation_importance(
-    lgbm_importance,
-    top_n=5,
-    title="LGBM Permutation Feature Importance (Validation)",
-    save_path=figures_dir / "pfi_lgbm.png",
-)
+        lgbm_importance,
+        top_n=5,
+        title="LGBM Permutation Feature Importance (Validation)",
+        save_path=figures_dir / "pfi_lgbm.png",
+    )
     plot_permutation_importance(
-    glm_importance,
-    top_n=5,
-    title="GLM Permutation Feature Importance (Validation)",
-    save_path=figures_dir / "pfi_glm.png",
-)
+        glm_importance,
+        top_n=5,
+        title="GLM Permutation Feature Importance (Validation)",
+        save_path=figures_dir / "pfi_glm.png",
+    )
 
-
-
-# Partial Dependence Plots (Top 5 features, LGBM)
+    # Partial Dependence Plots (Top 5 features, LGBM)
     # Top 5 features
     top5_features = lgbm_importance["feature"].head(5)
 
@@ -181,7 +178,6 @@ def run_evaluation(
             ax=axes[i],
         )
 
-
     for j in range(len(top5_features), len(axes)):
         fig.delaxes(axes[j])
 
@@ -199,6 +195,3 @@ def run_evaluation(
 
 if __name__ == "__main__":
     run_evaluation()
-
-
-

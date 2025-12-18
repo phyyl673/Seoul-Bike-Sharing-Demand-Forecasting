@@ -5,7 +5,6 @@ from typing import Iterable, Literal, Optional
 
 import pandas as pd
 
-
 SplitMethod = Literal["random", "id_hash"]
 
 
@@ -65,8 +64,8 @@ def create_sample_split_id_hash(
     Deterministic ID-based train/validation split using a stable hash
     of key columns.
 
-    In the seoul bike sharing demand forecasting project, there is no 
-    explicit ID column.A composite keyn(e.g. ['date', 'hour']) can be 
+    In the seoul bike sharing demand forecasting project, there is no
+    explicit ID column.A composite keyn(e.g. ['date', 'hour']) can be
     used instead.
 
     Parameters
@@ -113,9 +112,7 @@ def create_sample_split_id_hash(
         return int(h, 16) % modulo
 
     buckets = out.apply(_bucket_for_row, axis=1)
-    out[sample_col] = buckets.map(
-        lambda b: "train" if b < threshold else "validation"
-    )
+    out[sample_col] = buckets.map(lambda b: "train" if b < threshold else "validation")
 
     return out
 
@@ -134,12 +131,15 @@ def create_sample_split(
 
     Examples
     --------
-    >>> df = create_sample_split(
-    ...     df, method="id_hash", key_cols=["date", "hour"]
-    ... )
-    >>> df = create_sample_split(
-    ...     df, method="random", random_state=42
-    ... )
+    df = create_sample_split(
+        df, method="id_hash", key_cols=["date", "hour"]
+    )
+
+    Or
+
+    df = create_sample_split(
+         df, method="random", random_state=42
+    )
     """
     if method == "random":
         return create_sample_split_random(

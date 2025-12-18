@@ -1,57 +1,85 @@
+from __future__ import annotations
+
 from pathlib import Path
+
 import pandas as pd
+
+
+def _project_root() -> Path:
+    """
+    Return the project root directory.
+
+    Notes
+    -----
+    This project assumes the repository root is three levels above this file.
+    If you move this module to a different depth, update `parents[3]`
+    accordingly.
+    """
+    return Path(__file__).resolve().parents[3]
 
 
 def load_data(csv_path: str = "raw/SeoulBikeData.csv") -> pd.DataFrame:
     """
-    Loads the raw Seoul Bike Data from the project's data directory.
-
-    The dataset is assumed to be located under the project's
-    `data/` directory. The default relative path can
-    be changed if the data location is updated.
+    Load the raw Seoul Bike data from the project's `data/` directory.
 
     Parameters
     ----------
     csv_path : str, optional
-        The relative path to the CSV file within the 'data' directory.
-        By default "raw/SeoulBikeData.csv".
+        Path to the CSV file *relative to* `<project_root>/data/`.
+        Defaults to ``"raw/SeoulBikeData.csv"``.
 
     Returns
     -------
     pd.DataFrame
-        The loaded pandas DataFrame containing the raw bike data.
+        Raw bike data loaded from CSV.
 
     Raises
     ------
     FileNotFoundError
-        If the specified CSV file does not exist at the expected location.
+        If the CSV file does not exist.
     """
-    project_root = Path(__file__).resolve().parents[3]
-    data_dir = project_root / "data"
-
-    file_path = data_dir / csv_path
+    project_root = _project_root()
+    file_path = project_root / "data" / csv_path
 
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"Data file not found at expected location: {file_path}"
-        )
+        raise FileNotFoundError(f"Data file not found: {file_path}")
 
-    df = pd.read_csv(file_path, encoding="latin1")
-    return df
+    return pd.read_csv(file_path, encoding="latin1")
 
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parents[3]
 
 def load_cleaned_data(
     parquet_path: str = "processed/seoul_bike_cleaned.parquet",
+    *,
+    ensure_calendar_features: bool = True,
 ) -> pd.DataFrame:
     """
-    Load cleaned (processed) Seoul Bike data from parquet.
+    Load cleaned (processed) Seoul Bike data from a parquet file.
 
     This loader is defensive: if the stored parquet was generated before
-    we added calendar features (month/day_of_week/is_weekend), it will
-    recreate them from the 'date' column.
+    calendar features were added, it can recreate them from the `date` column.
+
+    Parameters
+    ----------
+    parquet_path : str, optional
+        Path to the parquet file *relative to* `<project_root>/data/`.
+        Defaults to ``"processed/seoul_bike_cleaned.parquet"``.
+    ensure_calendar_features : bool, optional
+        If True, ensure `month`, `day_of_week` exists
+        (derived from `date`) when missing. Defaults to True.
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned dataset loaded from parquet.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the parquet file does not exist.
+    KeyError
+        If `date` is missing from the cleaned data.
+    ValueError
+        If `date` cannot be converted to datetime.
     """
     root = _project_root()
     file_path = root / "data" / parquet_path
@@ -61,13 +89,17 @@ def load_cleaned_data(
 
     df = pd.read_parquet(file_path)
 
-    # ---- Defensive feature completion (handles "old parquet" cases)
     if "date" not in df.columns:
         raise KeyError("Expected column 'date' not found in cleaned data.")
 
-    # ensure datetime
+    # Ensure datetime (raise if conversion fails to keep bugs visible)
     if not pd.api.types.is_datetime64_any_dtype(df["date"]):
         df["date"] = pd.to_datetime(df["date"], errors="raise")
 
+    if ensure_calendar_features:
+        if "month" not in df.columns:
+            df["month"] = df["date"].dt.month
+        if "day_of_week" not in df.columns:
+            df["day_of_week"] = df["date"].dt.dayofweek  # Monday=0, Sunday=6
 
     return df

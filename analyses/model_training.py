@@ -3,14 +3,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sklearn.metrics import mean_tweedie_deviance, make_scorer
+from sklearn.metrics import make_scorer, mean_tweedie_deviance
 from sklearn.model_selection import GridSearchCV, KFold, RandomizedSearchCV
 
 from bike_demand.data.load_data import load_cleaned_data
+from bike_demand.modelling.glm_pipeline import build_glm_pipeline
+from bike_demand.modelling.glm_pipeline import split_xy as split_xy_glm
+from bike_demand.modelling.lgbm_pipeline import build_lgbm_pipeline
+from bike_demand.modelling.lgbm_pipeline import split_xy as split_xy_lgbm
 from bike_demand.modelling.sample_split import create_sample_split
-from bike_demand.modelling.glm_pipeline import build_glm_pipeline, split_xy as split_xy_glm
-from bike_demand.modelling.lgbm_pipeline import build_lgbm_pipeline, split_xy as split_xy_lgbm
-
 
 TWEEDIE_POWER = 1.5
 RANDOM_STATE = 42
@@ -34,11 +35,9 @@ def main() -> None:
 
     # Load
     df_load = load_cleaned_data()
-    
+
     # Restrict to functioning days ONLY (structural zeros)
     df_nf = df_load[df_load["functioning_day"].eq("Yes")].copy()
-
-
 
     # Split (ID-hash using composite key: date + hour)
     df = create_sample_split(
@@ -125,15 +124,15 @@ def main() -> None:
     print("  GLM :", glm_val_dev)
     print("  LGBM:", lgbm_val_dev)
 
-    # ***Save best params + key results for evaluation.py
+    # Save best params + key results for evaluation.py
     glm_best_params = glm_search.best_params_
     lgbm_best_params = lgbm_search.best_params_
 
-    # ***Save separate files (easy to load per-model)
+    # Save separate files (easy to load per-model)
     _save_json(glm_best_params, results_dir / "glm_best_params.json")
     _save_json(lgbm_best_params, results_dir / "lgbm_best_params.json")
 
-    # ***Save one combined file (single source of truth)
+    # Save one combined file (single source of truth)
     payload = {
         "meta": {
             "tweedie_power": TWEEDIE_POWER,

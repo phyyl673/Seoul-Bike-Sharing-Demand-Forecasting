@@ -13,7 +13,9 @@ from bike_demand.feature_engineering.transformers import CyclicalEncoder
 from bike_demand.modelling.glm_pipeline import BikeFeatureSpec
 
 
-def split_xy(df: pd.DataFrame, spec: BikeFeatureSpec | None = None) -> tuple[pd.DataFrame, pd.Series]:
+def split_xy(
+    df: pd.DataFrame, spec: BikeFeatureSpec | None = None
+) -> tuple[pd.DataFrame, pd.Series]:
     spec = spec or BikeFeatureSpec()
     X = df.drop(columns=[spec.target, *spec.drop], errors="ignore")
     y = df[spec.target]

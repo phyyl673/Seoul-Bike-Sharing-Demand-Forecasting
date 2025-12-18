@@ -1,6 +1,8 @@
 from __future__ import annotations
-import numpy as np
+
 from pathlib import Path
+
+import numpy as np
 import pandas as pd
 
 
@@ -8,12 +10,27 @@ def clean_seoul_bike_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Clean and prepare the Seoul Bike Sharing Demand dataset for modelling.
 
-    Changes applied:
-    - Stripped column names and renamed columns using an explicit mapping.
-    - Parsed dates and extracted calendar features (month, day_of_week, is_weekend).
-    - Standardised categorical variables (strip values) and cast to 'category' dtype.
-    - Replaced +/-inf with NaN and performed basic sanity checks.
-    - Retained outliers as they reflect genuine weather conditions.
+    The function standardises column names, parses date fields, constructs
+    basic calendar features, normalises categorical string values, and applies
+    basic sanity checks.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw dataset as loaded from the original CSV.
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned dataset with standardised column names and types.
+
+    Raises
+    ------
+    KeyError
+        If the raw dataset is missing any expected columns.
+    ValueError
+        If `hour` is outside [0, 23], if `rented_bike_count` contains negative
+        values, or if NaNs appear after cleaning in numeric columns.
     """
     out = df.copy()
     out.columns = out.columns.str.strip()
@@ -53,13 +70,13 @@ def clean_seoul_bike_data(df: pd.DataFrame) -> pd.DataFrame:
     # Calendar features
     out["month"] = out["date"].dt.month.astype("int8")
     out["day_of_week"] = out["date"].dt.dayofweek.astype("int8")  # Monday=0
-    
+
     # Standardise + cast categoricals
     cat_cols = ["seasons", "holiday", "functioning_day"]
     for c in cat_cols:
         out[c] = out[c].astype(str).str.strip().astype("category")
 
-    # Replace infinite numeric values with NaN 
+    # Replace infinite numeric values with NaN
     num_cols = [
         "rented_bike_count",
         "temperature",
@@ -86,22 +103,62 @@ def clean_seoul_bike_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def find_project_root(start: Path) -> Path:
+    """
+    Find the project root by searching for a `pyproject.toml` file upwards.
+
+    Parameters
+    ----------
+    start : pathlib.Path
+        Starting path to search from (typically `Path(__file__).resolve()`).
+
+    Returns
+    -------
+    pathlib.Path
+        Path to the project root directory.
+
+    Raises
+    ------
+    FileNotFoundError
+        If no parent directory contains `pyproject.toml`.
+    """
     for p in [start] + list(start.parents):
         if (p / "pyproject.toml").exists():
             return p
     raise FileNotFoundError("Could not find project root containing pyproject.toml")
 
+
 def save_processed_data(
     df: pd.DataFrame,
     filename: str = "seoul_bike_cleaned.parquet",
+    *,
+    verbose: bool = False,
 ) -> Path:
+    """
+    Save a cleaned dataset to `<project_root>/data/processed/` as parquet.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Cleaned dataframe to be saved.
+    filename : str, optional
+        Output parquet filename. Defaults to ``"seoul_bike_cleaned.parquet"``.
+    verbose : bool, optional
+        If True, print basic save information. Defaults to False.
+
+    Returns
+    -------
+    pathlib.Path
+        The path to the saved parquet file.
+    """
     project_root = find_project_root(Path(__file__).resolve())
     processed_dir = project_root / "data" / "processed"
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     path = processed_dir / filename
-    print("Saving columns:", df.columns.tolist())
-    print("Saving to:", path.resolve())
+
+    if verbose:
+        print("Saving columns:", df.columns.tolist())
+        print("Saving to:", path.resolve())
+
     df.to_parquet(path, index=False)
-    
     return path
