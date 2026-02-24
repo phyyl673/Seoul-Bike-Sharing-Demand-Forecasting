@@ -1,12 +1,8 @@
-# Bike Sharing Demand Forecasting  
-
-## Project Overview
+# Bike Sharing Demand Forecasting
 
 This repository implements an end-to-end **prediction-focused data science workflow** to forecast **hourly system-level bike rental demand** using the Seoul Bike Sharing Demand dataset. The analysis generates **operationally relevant insights** into how demand varies across time and weather conditions, supporting more informed decisions on capacity planning and system-level resource allocation.
 
-
-The project is developed as part of the **combined D100 / D400 assessment** and implements a
-complete data science workflow, including:
+The project implements a complete data science workflow, including:
 - reproducible data loading and cleaning,
 - structured exploratory data analysis (EDA) to understand the data,
 - model training using two complementary approaches: a parametric GLM and a non-parametric LightGBM,
@@ -169,5 +165,6 @@ Code quality and consistency are enforced through:
 - type hints and docstrings for improved readability and maintainability,
 - automated linting and formatting via pre-commit hooks (e.g. `ruff`),
 - notebook output stripping using `nbstripout` to keep version control clean.
+
 
 
